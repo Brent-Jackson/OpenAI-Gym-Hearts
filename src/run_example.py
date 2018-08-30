@@ -4,8 +4,9 @@ from Hearts import *
 from Agent.human import Human
 from Agent.randomAI import RandomAI
 
-NUM_EPISODES = 10
+NUM_GAMES = 2
 MAX_SCORE = 100
+NUM_ROUNDS = 4
 
 playersNameList = ['Kazuma', 'Aqua', 'Megumin', 'Darkness']
 agent_list = [0, 0, 0, 0]
@@ -26,9 +27,10 @@ agent_list[3] = RandomAI(playersNameList[3], {'print_info': True})
 
 
 env = gym.make('Hearts_Card_Game-v0')
-env.__init__(playersNameList, MAX_SCORE)
+env.__init__(playersNameList, MAX_SCORE, NUM_ROUNDS)
 
-for i_episode in range(NUM_EPISODES):
+for i_episode in range(NUM_GAMES):
+    print('Start of game {0}\n'.format(i_episode + 1))
     
     observation = env.reset()
     
@@ -53,5 +55,6 @@ for i_episode in range(NUM_EPISODES):
             print('\nreward: {0}\n'.format(reward))
 
         if done:
-            print('\nGame Over!!\n')
+            print('\nGame {0} Over!!\n'.format(i_episode + 1))
             break
+print('Simulation complete!')

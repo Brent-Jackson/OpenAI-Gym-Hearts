@@ -24,9 +24,10 @@ cardsToPass = 3
 
 class HeartsEnv(Env):
 
-    def __init__(self, playersName, maxScore=100):
+    def __init__(self, playersName, maxScore=100, maxRounds=0):
         
         self.maxScore = maxScore
+        self.maxRounds = maxRounds  # 0 means unlimited rounds
         
         self.roundNum = 0
         self.trickNum = 0  # initialization value such that first round is round 0
@@ -52,8 +53,7 @@ class HeartsEnv(Env):
 
         '''
         
-        self.event = None
-        self.round = 0
+        self.event = None # game state
         
         self.renderInfo = {'printFlag': False, 'Msg': ""}
 
@@ -207,7 +207,7 @@ class HeartsEnv(Env):
         
         for p in self.players:        
             p.score = 0
-        self.round = 0
+        self.roundNum = 0
     
         self.renderInfo = {'printFlag': False, 'Msg': ""}
         self.renderInfo['printFlag'] = True
@@ -226,7 +226,6 @@ class HeartsEnv(Env):
         self._dealCards()
         self.currentTrick = Trick()
         self.passingCards = [[], [], [], []]
-        self.round += 1
         for p in self.players:
             p.resetRoundCards()
             p.discardTricks()
@@ -252,7 +251,7 @@ class HeartsEnv(Env):
         self.event_data_for_server = {'now_player_index': 0}          
 
         self.renderInfo['printFlag'] = True
-        self.renderInfo['Msg'] = '\n*** Start Round {0} ***\n'.format(self.round)
+        self.renderInfo['Msg'] = '\n*** Start Round {0} ***\n'.format(self.roundNum)
         for p in self.players:
             self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.score)
 
@@ -482,12 +481,12 @@ class HeartsEnv(Env):
                         'score': self.players[3].score}
                        ],
                     'ShootingMoon': self.shootingMoon,
-                    'Round': self.round,
+                    'Round': self.roundNum,
                 }
             }
 
         self.renderInfo['printFlag'] = True
-        self.renderInfo['Msg'] = '\n*** Round {0} End ***\n'.format(self.round)
+        self.renderInfo['Msg'] = '\n*** Round {0} End ***\n'.format(self.roundNum)
         for p in self.players:
             self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.score)
             
@@ -495,11 +494,11 @@ class HeartsEnv(Env):
         
         temp_loser = max(self.players, key=lambda x:x.score)
         # new round if no one has lost
-        if temp_loser.score < self.maxScore:
-            self.event = 'NewRound'
+        if temp_loser.score >= self.maxScore or (self.maxRounds != 0 and self.roundNum >= self.maxRounds):
+            self.event = 'GameOver'
             self.event_data_for_server = {}
         else:
-            self.event = 'GameOver'
+            self.event = 'NewRound'
             self.event_data_for_server = {}
         
         reward = {}
@@ -525,7 +524,7 @@ class HeartsEnv(Env):
                         {'playerName': self.players[3].name,
                          'score': self.players[3].score}
                         ],
-                    'Round': self.round,
+                    'Round': self.roundNum,
                     'Winner': winner.name
                 }
             }
@@ -535,7 +534,7 @@ class HeartsEnv(Env):
         for p in self.players:
             self.renderInfo['Msg'] += '{0}: {1}\n'.format(p.name, p.score)
         
-        self.renderInfo['Msg'] += '\nRound: {0}\n'.format(self.round)       
+        self.renderInfo['Msg'] += '\nRound: {0}\n'.format(self.roundNum)       
         self.renderInfo['Msg'] += 'Winner: {0}\n'.format(winner.name)
         
         self.event = None
